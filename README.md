@@ -62,8 +62,10 @@ scripts/test-rls.mjs   proves two users cannot see each other's data
 
 1. Create a project at [supabase.com](https://supabase.com) — region **South
    Asia (Mumbai)** for the lowest latency from India.
-2. From **Project Settings → API**, copy the project URL and the publishable key
-   into `.env`.
+2. In the dashboard: **Settings → API** for the project URL, and
+   **Settings → API Keys → Publishable key** for the key. Put both in `.env`
+   (the green **Connect** button in the top bar shows them together). Older
+   projects show these under **Legacy API Keys** as the `anon` key instead.
 3. Apply the schema:
 
    ```bash
