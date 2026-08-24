@@ -128,13 +128,23 @@ entirely and must never appear in app code (only `scripts/test-rls.mjs` uses it)
 ```bash
 npm install -g eas-cli
 eas login
-eas init                      # writes the project ID
-eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://…" --environment preview
-eas env:create --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value "sb_publishable_…" --environment preview
+eas init
+eas env:set --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value "https://…"
+eas env:set --environment preview --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value "sb_publishable_…"
 ```
 
+`eas init` cannot write into a dynamic TypeScript config; it prints the project
+ID and stops. Paste it into `extra.eas.projectId` in `app.config.ts` by hand,
+as a literal — CI builds from a clean checkout with no `.env`, so reading it
+from `process.env` there would leave the build unable to resolve the project.
+
 EAS builds run on Expo's servers, so they read these EAS environment variables —
-not your local `.env` and not the GitHub secrets.
+not your local `.env` and not the GitHub secrets. Which set a build reads is
+pinned by `environment` on each profile in `eas.json`.
+
+**Never add `SUPABASE_SERVICE_ROLE_KEY` to EAS.** It bypasses RLS, so shipping
+it inside an APK would hand every install full read and write access to every
+family member's data. It belongs only in your local `.env`, for `test:rls`.
 
 ### 4. GitHub secrets
 
