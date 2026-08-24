@@ -8,7 +8,7 @@ type AmountTextProps = {
   amount: number | string | null | undefined;
   currency?: string;
   locale?: string;
-  size?: 'display' | 'displayLg' | 'h1' | 'h2' | 'body' | 'caption';
+  size?: 'display' | 'displayLg' | 'h1' | 'h2' | 'h3' | 'body' | 'caption';
   /** Colour by direction: income green, expense red, transfer neutral. */
   txnType?: TxnType;
   showSign?: boolean;

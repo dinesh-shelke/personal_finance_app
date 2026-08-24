@@ -196,9 +196,9 @@ per month, so building on every push would exhaust it in days.
 | M1 Database — schema, RLS, views, seed trigger          | ✅    |
 | M2 Auth — Google PKCE, session persistence, route guard | ✅    |
 | M3 Design system — UI primitives                        | ✅    |
-| M4 Accounts & categories CRUD                           | ⏳    |
-| M5 Transactions — numpad, transfers, history            | ⏳    |
-| M6 Dashboard — real balances and summaries              | ⏳    |
+| M4 Accounts & categories CRUD                           | ✅    |
+| M5 Transactions — numpad, transfers, history            | ✅    |
+| M6 Dashboard — real balances and summaries              | ✅    |
 | M7 Ship — icon, splash, first tagged APK                | ⏳    |
 
 Post-v1: budgets, savings goals, reports and CSV/PDF export, recurring

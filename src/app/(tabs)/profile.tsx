@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Card, ListRow, PillButton, Screen, SectionHeader } from '@/components/ui';
 import { useSession } from '@/features/auth/SessionProvider';
+import { useMoneyFormat, useProfile } from '@/features/profile/hooks';
 import { colors, radius, spacing, text } from '@/theme';
 
 import { TAB_BAR_HEIGHT } from './_layout';
@@ -10,13 +12,19 @@ import { TAB_BAR_HEIGHT } from './_layout';
 /**
  * Profile and settings.
  *
- * Sign-out is live from M2 so the two-user isolation test can be run by hand on
- * a device. Editable name/currency/privacy settings arrive with M7.
+ * Sign-out is live so the two-user isolation test can be run by hand on a
+ * device. Editing the name and switching currency arrive with M7.
  */
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user, signOut } = useSession();
+  const { data: profile } = useProfile();
+  const { currency } = useMoneyFormat();
 
-  const fullName = (user?.user_metadata?.full_name as string | undefined) ?? 'Signed in';
+  const fullName =
+    profile?.full_name?.trim() ||
+    (user?.user_metadata?.full_name as string | undefined) ||
+    'Signed in';
   const email = user?.email ?? '—';
 
   return (
@@ -40,7 +48,7 @@ export default function ProfileScreen() {
         <ListRow
           icon="cash-outline"
           title="Currency"
-          subtitle="Indian Rupee (INR)"
+          subtitle={currencyLabel(currency)}
           showChevron
           onPress={() => {}}
         />
@@ -50,7 +58,7 @@ export default function ProfileScreen() {
           title="Accounts"
           subtitle="Manage your wallets"
           showChevron
-          onPress={() => {}}
+          onPress={() => router.push('/accounts')}
         />
         <View style={styles.divider} />
         <ListRow
@@ -58,7 +66,7 @@ export default function ProfileScreen() {
           title="Categories"
           subtitle="Income and expense categories"
           showChevron
-          onPress={() => {}}
+          onPress={() => router.push('/categories')}
         />
       </Card>
 
@@ -67,6 +75,18 @@ export default function ProfileScreen() {
       </View>
     </Screen>
   );
+}
+
+/** ISO code -> a name a person recognises. Extend when more are offered. */
+function currencyLabel(code: string): string {
+  const names: Record<string, string> = {
+    INR: 'Indian Rupee',
+    USD: 'US Dollar',
+    EUR: 'Euro',
+    GBP: 'British Pound',
+    AED: 'UAE Dirham',
+  };
+  return names[code] ? `${names[code]} (${code})` : code;
 }
 
 const styles = StyleSheet.create({
