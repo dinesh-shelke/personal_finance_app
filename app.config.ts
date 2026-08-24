@@ -66,8 +66,13 @@ const config: ExpoConfig = {
   },
 
   extra: {
-    // Populated by `eas init` — do not hand-edit.
-    eas: { projectId: process.env.EAS_PROJECT_ID },
+    // `eas init` cannot write into a dynamic TypeScript config, so this is set
+    // by hand. It must stay a literal rather than reading process.env: the CI
+    // runner builds from a clean checkout with no .env, and an undefined id
+    // makes `eas build --non-interactive` fail to resolve the project.
+    //
+    // Not a secret — it appears in every expo.dev URL for this project.
+    eas: { projectId: '3a73b081-e1af-47cc-bc9d-afd59421b65e' },
   },
 };
 
