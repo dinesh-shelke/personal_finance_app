@@ -1,0 +1,69 @@
+name: Database migrations
+
+# Applies new migrations to the hosted Supabase project.
+#
+# Only fires when files under supabase/ actually change, so an app-only commit
+# never touches the database. `workflow_dispatch` is kept for re-running a
+# failed apply without an empty commit.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+  workflow_dispatch:
+
+concurrency:
+  # Never let two migration runs race each other against one database.
+  group: db-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Push migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      - name: Show pending migrations
+        # Printed before applying so the log records exactly what this run
+        # changed, which matters when diagnosing a bad deploy later.
+        run: supabase migration list --linked
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      - name: Apply migrations
+        run: supabase db push --linked
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      - name: Verify committed types still match the live schema
+        # Catches the case where a migration landed but `npm run types:db` was
+        # never re-run, which would leave the app compiling against a schema
+        # that no longer exists.
+        run: |
+          supabase gen types typescript --linked --schema public > /tmp/live-types.ts
+          if ! diff -q /tmp/live-types.ts src/types/database.ts > /dev/null 2>&1; then
+            echo "::warning::src/types/database.ts differs from the live schema. Run 'npm run types:db' and commit the result."
+            diff /tmp/live-types.ts src/types/database.ts || true
+          else
+            echo "Committed types match the live schema."
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}

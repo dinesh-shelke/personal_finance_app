@@ -1,0 +1,77 @@
+name: CI
+
+# Runs on every push and pull request. Cheap and fast — GitHub Actions minutes
+# are free for public repos and generous for private ones, so unlike the EAS
+# build workflow there is no reason to restrict when this runs.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A new push to the same branch cancels the previous run.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, lint and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Unit tests
+        run: npm test -- --ci --coverage
+        env:
+          # The app throws at import time without these; jest.setup.js sets
+          # them too, but be explicit so a failure here is never mysterious.
+          EXPO_PUBLIC_SUPABASE_URL: https://ci.supabase.co
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  expo-doctor:
+    name: Expo dependency health
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Advisory only: expo-doctor flags upstream peer-dependency drift we cannot
+    # always fix immediately, so it reports without blocking a merge.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npx expo-doctor

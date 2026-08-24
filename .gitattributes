@@ -1,0 +1,8 @@
+# Normalise line endings so the repo is identical on Windows, macOS and the
+# Linux CI runners. Without this, CRLF creeps in and Prettier fails in CI.
+* text=auto eol=lf
+
+*.png binary
+*.webp binary
+*.ttf binary
+*.jks binary
