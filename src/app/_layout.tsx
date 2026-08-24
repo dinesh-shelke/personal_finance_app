@@ -6,7 +6,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -52,28 +52,22 @@ export default function RootLayout() {
 /**
  * Routes between the signed-out and signed-in halves of the app.
  *
- * This runs as a child of SessionProvider (not beside it) so it can read the
- * session; expo-router needs the Stack mounted before any redirect, hence the
- * effect rather than an early return.
+ * The signed-in screens are declared inside a guard rather than redirected to
+ * from an effect. An effect runs only after the commit, so a redirect written
+ * that way is always one render too late: on a cold start with no persisted
+ * session the router mounts `/` -> `(tabs)/index` first, and the dashboard's
+ * `useUserId()` throws before the redirect can fire. Screens behind a false
+ * guard are absent from the tree, so they cannot mount at all.
+ *
+ * The `key` is the other half of the same problem. Flipping a guard removes
+ * the screens, but a mounted screen can still re-render once with the new
+ * (null) session before the navigator unmounts it — which is the same throw,
+ * on sign-out instead of on launch. Re-keying makes React discard the old tree
+ * outright rather than render it again. It only changes when signed-in state
+ * itself changes, so a token refresh does not remount the app.
  */
 function AuthGate() {
   const { session, isLoading } = useSession();
-  const segments = useSegments();
-  const router = useRouter();
-
-  const inAuthGroup = segments[0] === '(auth)';
-
-  useEffect(() => {
-    // Wait for the persisted session to load, or a signed-in user gets bounced
-    // to the sign-in screen on every cold start.
-    if (isLoading) return;
-
-    if (!session && !inAuthGroup) {
-      router.replace('/(auth)/sign-in');
-    } else if (session && inAuthGroup) {
-      router.replace('/(tabs)');
-    }
-  }, [session, isLoading, inAuthGroup, router]);
 
   if (isLoading) {
     return (
@@ -85,22 +79,28 @@ function AuthGate() {
 
   return (
     <Stack
+      key={session ? 'authenticated' : 'anonymous'}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.bg },
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
-      <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-      <Stack.Screen name="accounts" />
+      <Stack.Protected guard={!session}>
+        <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
+      </Stack.Protected>
 
-      <Stack.Screen name="categories" />
+      <Stack.Protected guard={!!session}>
+        <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+        <Stack.Screen name="accounts" />
 
-      <Stack.Screen
-        name="transaction"
-        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-      />
+        <Stack.Screen name="categories" />
+
+        <Stack.Screen
+          name="transaction"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        />
+      </Stack.Protected>
     </Stack>
   );
 }
