@@ -27,7 +27,10 @@ const config: ExpoConfig = {
     package: 'com.dshelke.myfinance',
     versionCode: 1,
     adaptiveIcon: {
-      backgroundColor: '#F4F5FA',
+      // colors.primary. The foreground draws the mark in white and mint, so
+      // this must stay the dark tile colour — on a light background the mark
+      // would all but disappear. Regenerate both with `npm run icons`.
+      backgroundColor: '#0B3B4C',
       foregroundImage: './assets/images/android-icon-foreground.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },

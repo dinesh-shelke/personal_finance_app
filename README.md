@@ -41,7 +41,10 @@ src/
   types/database.ts    GENERATED — do not edit by hand
   utils/               money.ts, date.ts
 supabase/migrations/   schema, RLS policies, views, triggers
+assets/brand/          GENERATED vector source for the icons — see below
+assets/images/         GENERATED PNGs that app.config.ts points at
 scripts/test-rls.mjs   proves two users cannot see each other's data
+scripts/generate-icons.mjs  draws every icon from one mark
 .github/workflows/     CI, database migrations, Android build
 ```
 
@@ -53,6 +56,23 @@ scripts/test-rls.mjs   proves two users cannot see each other's data
    JavaScript floats are not (`0.1 + 0.2 !== 0.3`). Totals are aggregated in SQL
    (`account_balances`, `monthly_summary`); if you must add in JS, use
    `sumAmounts` from `src/utils/money.ts`.
+
+### Icons
+
+Nothing under `assets/` is hand-drawn. `scripts/generate-icons.mjs` holds the
+mark's geometry, reads its colours out of `src/theme/tokens.ts`, and renders
+every SVG and PNG:
+
+```bash
+npm run icons
+```
+
+Edit the geometry constants at the top of that script — never the output files,
+which are overwritten on the next run. The three sizes are not interchangeable:
+the launcher tile is full-bleed, while the adaptive foreground and the
+monochrome (themed) icon are shrunk to fit Android's circular safe zone, so
+their marks are deliberately smaller. `android.adaptiveIcon.backgroundColor`
+must stay the dark `colors.primary`, because the foreground mark is white.
 
 ---
 
@@ -172,6 +192,10 @@ rows and cannot write to them — and that the balances and monthly totals are
 exact to the paisa. It deletes both users when it finishes. Run it after any
 change to `supabase/migrations/`.
 
+If it fails with `Could not find the table 'public.accounts' in the schema
+cache`, the keys are fine but the migrations were never applied — go back and
+run `npx supabase db push`.
+
 ---
 
 ## Releasing to the family
@@ -201,7 +225,7 @@ per month, so building on every push would exhaust it in days.
 | M4 Accounts & categories CRUD                           | ✅    |
 | M5 Transactions — numpad, transfers, history            | ✅    |
 | M6 Dashboard — real balances and summaries              | ✅    |
-| M7 Ship — icon, splash, first tagged APK                | ⏳    |
+| M7 Ship — icon and splash done; first tagged APK        | ⏳    |
 
 Post-v1: budgets, savings goals, reports and CSV/PDF export, recurring
 transactions, receipt photos, PWA, biometric lock, offline queue.

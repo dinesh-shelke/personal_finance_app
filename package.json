@@ -16,6 +16,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:rls": "node scripts/test-rls.mjs",
+    "icons": "node scripts/generate-icons.mjs",
     "types:db": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID --schema public > src/types/database.ts",
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff",
@@ -65,6 +66,7 @@
     "jest-expo": "^57.0.4",
     "prettier": "^3.9.6",
     "react-test-renderer": "^19.2.3",
+    "sharp": "^0.35.3",
     "supabase": "^2.115.0",
     "typescript": "~6.0.3"
   }
