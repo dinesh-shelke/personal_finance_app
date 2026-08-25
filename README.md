@@ -247,7 +247,15 @@ per month, so building on every push would exhaust it in days.
 | M4 Accounts & categories CRUD                           | ✅    |
 | M5 Transactions — numpad, transfers, history            | ✅    |
 | M6 Dashboard — real balances and summaries              | ✅    |
-| M7 Ship — icon and splash done; first tagged APK        | ⏳    |
+| M7 Ship — icon, splash, first tagged APK                | ✅    |
+
+**v1 is shipped.** A signed APK builds from a tag, installs on Android, signs in
+with Google and reads and writes real data, with isolation between users proven
+by `npm run test:rls`.
+
+Work from here is tracked in Jira under the `MF` project rather than in this
+table. Put the issue key in the branch name (`MF-14-recurring-transactions`) and
+the board updates itself as the branch, pull request and merge land.
 
 Post-v1: budgets, savings goals, reports and CSV/PDF export, recurring
 transactions, receipt photos, PWA, biometric lock, offline queue.
