@@ -13,7 +13,7 @@ const SCHEME = 'pfa';
 const config: ExpoConfig = {
   name: 'MyFinance',
   slug: 'personal-finance-app',
-  version: '0.1.1',
+  version: '0.1.2',
   orientation: 'portrait',
   scheme: SCHEME,
   icon: './assets/images/icon.png',
