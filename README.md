@@ -117,11 +117,23 @@ entirely and must never appear in app code (only `scripts/test-rls.mjs` uses it)
 5. In Supabase: **Authentication → URL Configuration → Redirect URLs** — add:
 
    ```
-   pfa://*
+   pfa://auth/callback
+   pfa://**
    ```
 
-   Without this the browser completes the Google flow and then dead-ends: the
-   app never receives the code. It is the single most common setup mistake.
+   Both stars matter: Supabase matches these as globs where `*` stops at a `/`,
+   so `pfa://*` does **not** match the `pfa://auth/callback` the app actually
+   asks for. An unmatched redirect is discarded silently and the flow falls
+   back to **Site URL**.
+
+6. In Supabase: **Authentication → URL Configuration → Site URL** — change it
+   from the default `http://localhost:3000` to `pfa://auth/callback`. There is
+   no web deployment, so a fallback to localhost only ever dead-ends on a
+   refused connection.
+
+   Get either of these wrong and the browser completes the Google flow and then
+   strands the user: the app never receives the code. It is the single most
+   common setup mistake.
 
 ### 3. Expo / EAS
 
