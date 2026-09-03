@@ -231,8 +231,30 @@ That triggers `android-build.yml`, which builds a signed APK and posts the
 install link to the workflow summary. Share the link; no Play Store account
 needed.
 
-Builds are tag-triggered on purpose — the EAS free tier allows 15 Android builds
-per month, so building on every push would exhaust it in days.
+Builds are tag-triggered on purpose. The EAS free plan allows 30 builds a month
+(at most 15 of them iOS, so all 30 are available to this Android-only project),
+and building on every push would still burn through them.
+
+### Update or build?
+
+Most changes do not need a build at all. `expo-updates` is configured, so a
+JavaScript or asset change reaches installed apps over the air:
+
+```bash
+eas update --channel preview --message "What changed" --environment preview
+```
+
+It arrives on the next launch, takes seconds, costs no build credit, and needs
+no reinstall.
+
+**A build is required** when the native runtime changes: a new native module, an
+SDK upgrade, or edits to `scheme`, permissions, icons or the splash screen.
+
+You do not have to judge this correctly. `runtimeVersion` uses the `fingerprint`
+policy, which is computed from the native project itself, so an update can only
+ever install on a build whose native side matches. Change something native and
+the fingerprint moves; the old build simply stops accepting updates rather than
+crashing on one it cannot run.
 
 ---
 

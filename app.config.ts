@@ -19,6 +19,28 @@ const config: ExpoConfig = {
   name: 'MyFinance',
   slug: 'personal-finance-app',
   version: '0.1.2',
+
+  /**
+   * Which installed builds an over-the-air update is allowed to reach.
+   *
+   * `fingerprint` rather than the `appVersion` policy the CLI suggests:
+   * appVersion ties compatibility to the `version` string above, so adding a
+   * native dependency without remembering to bump it would push JavaScript to
+   * a binary that cannot run it. This project has already let `version` sit at
+   * 0.1.2 while tags moved on, so that is not a theoretical risk here.
+   *
+   * Fingerprint is computed from the native project itself and changes on its
+   * own whenever anything affecting the runtime does — an SDK upgrade, a new
+   * native module, a config plugin. The cost is needing a fresh build more
+   * often; the benefit is that a broken update cannot be published at all.
+   */
+  runtimeVersion: { policy: 'fingerprint' },
+
+  updates: {
+    // Points at this project's update server; the id is the EAS project id.
+    url: 'https://u.expo.dev/3a73b081-e1af-47cc-bc9d-afd59421b65e',
+  },
+
   orientation: 'portrait',
   scheme: SCHEME,
   icon: './assets/images/icon.png',
