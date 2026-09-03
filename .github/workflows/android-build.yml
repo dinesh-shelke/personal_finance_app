@@ -36,6 +36,18 @@ jobs:
     timeout-minutes: 60
 
     steps:
+      # First, before checkout or npm ci: without the token every later step is
+      # wasted work, and the failure it produces names neither the secret nor
+      # where to set it.
+      - name: Check the Expo token is present
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::EXPO_TOKEN is not set. Create one at https://expo.dev/settings/access-tokens, then add it under Settings -> Secrets and variables -> Actions as a repository secret named EXPO_TOKEN. Note that repository transfers do not carry over secrets inherited from an organisation."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
