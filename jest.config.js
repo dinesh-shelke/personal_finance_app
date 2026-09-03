@@ -3,7 +3,10 @@ module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|react-native-svg))',
+    // `standard-navigation` is an expo-router dependency published as ESM; it
+    // reaches Jest only through `expo-router/testing-library`, so it was not
+    // needed until the AuthGate router test.
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|react-native-svg|standard-navigation))',
   ],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/types/**', '!src/**/*.d.ts'],
   moduleNameMapper: {
