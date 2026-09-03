@@ -367,6 +367,105 @@ async function main() {
     .eq('id', users.a.id)
     .single();
   check("A's currency was not changed", profileAfter?.currency === 'INR');
+
+  // -------------------------------------------------------------------------
+  section('Recurring schedules post the occurrences they owe');
+  // -------------------------------------------------------------------------
+  // Runs last on purpose: posting adds ledger rows, and the aggregate checks
+  // above assert exact totals.
+  //
+  // A daily schedule keeps the arithmetic unambiguous. Starting three days ago
+  // owes four occurrences — day -3, -2, -1 and today.
+  const isoDate = (offsetDays) => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + offsetDays);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const { data: scheduleA, error: scheduleError } = await A.from('recurring_transactions')
+    .insert({
+      user_id: users.a.id,
+      account_id: bankA.id,
+      category_id: foodA.id,
+      type: 'expense',
+      amount: 100,
+      frequency: 'daily',
+      interval_count: 1,
+      starts_on: isoDate(-3),
+      note: 'Daily coffee',
+    })
+    .select()
+    .single();
+  check('A can create a schedule', scheduleError == null, scheduleError?.message);
+
+  const { error: badShapeError } = await A.from('recurring_transactions').insert({
+    user_id: users.a.id,
+    account_id: bankA.id,
+    category_id: foodA.id,
+    transfer_account_id: cashA.id,
+    type: 'transfer',
+    amount: 100,
+    frequency: 'monthly',
+    starts_on: isoDate(0),
+  });
+  check('a transfer schedule carrying a category is rejected', badShapeError != null);
+
+  const beforeCount = (await A.from('transactions').select('id')).data?.length ?? 0;
+
+  const { data: postedFirst, error: postError } = await A.rpc('post_due_recurring');
+  check('A can post due schedules', postError == null, postError?.message);
+  check('four missed occurrences were written', postedFirst === 4, `got ${postedFirst}`);
+
+  const afterCount = (await A.from('transactions').select('id')).data?.length ?? 0;
+  check('the ledger grew by exactly four rows', afterCount === beforeCount + 4);
+
+  const { data: postedAgain } = await A.rpc('post_due_recurring');
+  check('a second call posts nothing', postedAgain === 0, `got ${postedAgain}`);
+
+  await A.from('recurring_transactions')
+    .update({ is_paused: true, starts_on: isoDate(-10) })
+    .eq('id', scheduleA.id);
+  const { data: postedPaused } = await A.rpc('post_due_recurring');
+  check('a paused schedule posts nothing', postedPaused === 0, `got ${postedPaused}`);
+
+  // -------------------------------------------------------------------------
+  section('ISOLATION — schedules are private too');
+  // -------------------------------------------------------------------------
+  const { data: bSeesSchedules } = await B.from('recurring_transactions').select('*');
+  check("B sees zero rows of A's schedules", bSeesSchedules?.length === 0);
+
+  const { error: bStealSchedule } = await B.from('recurring_transactions').insert({
+    user_id: users.a.id,
+    account_id: bankA.id,
+    type: 'expense',
+    amount: 999,
+    frequency: 'daily',
+    starts_on: isoDate(0),
+  });
+  check('B cannot create a schedule owned by A', bStealSchedule != null);
+
+  const { error: bUpdateSchedule, count: bUpdatedRows } = await B.from('recurring_transactions')
+    .update({ amount: 1 }, { count: 'exact' })
+    .eq('id', scheduleA.id);
+  check(
+    "B's update of A's schedule affects no rows",
+    bUpdateSchedule != null || bUpdatedRows === 0,
+    `updated ${bUpdatedRows}`,
+  );
+
+  // The posting function is `security invoker`, so B running it must walk only
+  // B's own schedules. If this ever returns rows, the function is writing into
+  // someone else's ledger.
+  const { data: bPosted, error: bPostError } = await B.rpc('post_due_recurring');
+  check('B can call the posting function', bPostError == null, bPostError?.message);
+  check("B posting writes none of A's occurrences", bPosted === 0, `got ${bPosted}`);
+
+  const { data: aLedgerAfterB } = await A.from('transactions').select('id');
+  check(
+    "A's ledger is untouched by B's posting run",
+    aLedgerAfterB?.length === afterCount,
+    `got ${aLedgerAfterB?.length}, expected ${afterCount}`,
+  );
 }
 
 async function cleanup() {
