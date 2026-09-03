@@ -5,15 +5,20 @@ import type { ExpoConfig } from 'expo/config';
  * `android.package`) — nothing else references these strings.
  *
  * `scheme` MUST stay in sync with the Supabase redirect allow-list
- * (Auth -> URL Configuration -> Redirect URLs: `pfa://*`), because the Google
- * OAuth flow returns to the app through this deep link.
+ * (Auth -> URL Configuration -> Redirect URLs: `pfa://auth/callback` and
+ * `pfa://**`), because the Google OAuth flow returns to the app through this
+ * deep link. `pfa://*` does not work: Supabase matches those patterns as globs
+ * in which `*` stops at a `/`, so it never matches the two-segment path.
+ *
+ * The redirect also needs a matching route at `src/app/auth/callback.tsx`, or
+ * the user lands on "Page not found" with a valid session behind it.
  */
 const SCHEME = 'pfa';
 
 const config: ExpoConfig = {
   name: 'MyFinance',
   slug: 'personal-finance-app',
-  version: '0.1.1',
+  version: '0.1.2',
   orientation: 'portrait',
   scheme: SCHEME,
   icon: './assets/images/icon.png',

@@ -86,6 +86,13 @@ function AuthGate() {
         animation: 'slide_from_right',
       }}
     >
+      {/*
+        Outside both guards on purpose: the OAuth redirect lands here while the
+        user is still signed out, and the screen must survive the instant the
+        session arrives. Behind either guard it would vanish mid-exchange.
+      */}
+      <Stack.Screen name="auth/callback" options={{ animation: 'fade' }} />
+
       <Stack.Protected guard={!session}>
         <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
       </Stack.Protected>
