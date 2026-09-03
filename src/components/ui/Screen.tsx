@@ -50,7 +50,21 @@ export function Screen({
   );
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }, style]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: insets.top,
+          // Scrolling screens pay for the bottom inset inside the scroll
+          // content below, so that they can scroll *through* it. A screen that
+          // does not scroll has no such place to put it, and anything it pins
+          // to the bottom — the Save row on the transaction form, for one —
+          // would otherwise sit underneath the system navigation bar.
+          paddingBottom: scroll ? 0 : insets.bottom + bottomInset,
+        },
+        style,
+      ]}
+    >
       {/* Dark icons: the background is light on every screen. */}
       <StatusBar style="dark" />
       {scroll ? (
